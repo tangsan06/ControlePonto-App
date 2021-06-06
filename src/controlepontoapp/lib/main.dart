@@ -1,11 +1,9 @@
-import 'dart:convert';
-
-import 'package:controlepontoapp/model/LoginResponse.dart';
 import 'package:controlepontoapp/rest.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'cadastro.dart';
-import 'package:http/http.dart' as http; // trabalha com o protocolo HTTP
+// trabalha com o protocolo HTTP
 
 // Main de inicialização do app
 void main() {
@@ -100,7 +98,7 @@ class _State extends State<LoginScreen> {
                     child: ElevatedButton(
                       child: Text('Login'),
                       onPressed: () {
-                        jsonRestApiHttp();
+                        _doLogin();
                       },
                     )),
                 Container(
@@ -137,46 +135,30 @@ class _State extends State<LoginScreen> {
         context, MaterialPageRoute(builder: (context) => Cadastro()));
   }
 
-  Uri url =
-      Uri.parse('http://projetopontoapi.000webhostapp.com/api/v1/user/search/');
-  // Uri url = Uri.parse('http://emsapi.esy.es/rest/api/search/');
-  // Método para requisição da API
-  jsonRestApiHttp() async {
-    // esse bloco de código envia a requisição ao servidor da API
+  void _doLogin() {
+    var rest = RestDart();
 
-    try {
-      http.Response response = await http.post(
-        'http://projetopontoapi.000webhostapp.com/api/v1/user/search/',
-        headers: <String, String>{
-          "Content-Type": "Application/json; charset=UTF-8"
-        },
-        body: jsonEncode(<String, String>{
-          "username": nameController.text,
-          "password": passwordController.text,
-        }),
-      );
+    var futureResponse = rest.jsonRestLogin(
+        '${this.nameController.text}', '${this.passwordController.text}');
 
-      // Bloco que recupera a informação do servidor e converte JSON para objeto
-      final parsed = json.decode(response.body);
-      var res = new LoginResponse.fromJson(parsed);
-
-      // Vamos mostrar os dados na tela do APP, tratando os erros
-      try {
-        if (res == null) {
-          setState(() {
-            this.message = "Login ou senha incorretos";
-          });
-        } else {
-          Navigator.push(
-              context, MaterialPageRoute(builder: (context) => DrawerScreen()));
-        }
-      } catch (e) {
-        // se não retornou dados (id, nome, email)
-        print('Error');
-      }
-    } catch (e) {
-      print(e);
-    }
+    futureResponse
+        .then((value) => {
+              if (value.info.toLowerCase() == "null")
+                {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => DrawerScreen()))
+                }
+              else
+                {
+                  setState(() {
+                    this.message = value.info;
+                  })
+                }
+            })
+        .onError((error, stackTrace) {
+      print(error);
+      return null;
+    });
   }
 }
 
